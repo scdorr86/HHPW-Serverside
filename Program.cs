@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.Json;
 using System.Runtime.CompilerServices;
+using HHPW_Serverside.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
