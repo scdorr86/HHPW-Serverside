@@ -6,5 +6,6 @@
         public string name { get; set; }
         public string uid { get; set; }
         public bool isEmployee { get; set; }
+        public List<Order> orders { get; set; }
     }
 }

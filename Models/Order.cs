@@ -12,6 +12,7 @@
         public List <Item> items { get; set; }
         public decimal orderTotal => items.Sum(i => i.price);
         public string uid { get; set; }
+        public User user { get; set; }
         public List<Review> reviews { get; set; }
     }
 }
