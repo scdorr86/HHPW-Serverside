@@ -1,8 +1,8 @@
+using HHPW_Serverside.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.Json;
 using System.Runtime.CompilerServices;
-using HHPW_Serverside.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,6 +46,306 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+// USER ENDPOINTS
+
+//get all users
+app.MapGet("/users", (hhpwDbContext db) =>
+{
+    return db.users.Include(x => x.orders)
+                   .ToList();
+});
+
+//get single user by uid
+app.MapGet("/userByUid/{uid}", (hhpwDbContext db, string uid) =>
+{
+    return db.users.Where(u => u.uid == uid)
+                   .Include(x => x.orders)
+                   .ToList();
+});
+
+//get single user by db id
+app.MapGet("/users/{id}", (hhpwDbContext db, int id) =>
+{
+    return db.users.Where(u => u.Id == id)
+                   .Include(x => x.orders)
+                   .ToList();
+});
+
+//create new user
+app.MapPost("/users", (hhpwDbContext db, User userPayload) =>
+{
+    User NewUser = new User()
+    {
+        name = userPayload.name,
+        isEmployee = userPayload.isEmployee,
+        uid = userPayload.uid,
+    };
+    db.users.Add(NewUser);
+    db.SaveChanges();
+    return Results.Created($"/api/users/{NewUser.Id}", NewUser);
+});
+
+// delete user by id
+app.MapDelete("/api/users/{id}", (hhpwDbContext db, int id) =>
+{
+    User userToDelete = db.users.SingleOrDefault(u => u.Id == id);
+    if (userToDelete == null)
+    {
+        return Results.NotFound();
+    }
+    db.users.Remove(userToDelete);
+    db.SaveChanges();
+    return Results.Ok(db.users);
+});
+
+// update user by id
+app.MapPut("/api/updateuser/{id}", (hhpwDbContext db, int id, User user) =>
+{
+    User userToUpdate = db.users.SingleOrDefault(u => u.Id == id);
+    if (userToUpdate == null)
+    {
+        return Results.NotFound();
+    }
+    userToUpdate.name = user.name;
+    userToUpdate.isEmployee = user.isEmployee;
+    userToUpdate.uid = user.uid;
+    db.SaveChanges();
+    return Results.Ok(userToUpdate);
+});
+
+// View users orders
+app.MapGet("/userorders/{id}/", (hhpwDbContext db, int id) =>
+{
+
+    return db.users.Where(u => u.Id == id)
+                   .Include(u => u.orders)
+                   .ThenInclude(o => o.items)
+                   .ThenInclude(i => i.itemType)
+                   .ToList();
+});
+
+// ITEM ENDPOINTS
+
+// View all items
+app.MapGet("/items", (hhpwDbContext db) =>
+{
+    return db.items.Include(i => i.Orders)
+                   .Include(i => i.itemType)
+                   .ToList();
+});
+
+// View single item by id
+app.MapGet("/items/{id}", (hhpwDbContext db, int id) =>
+{
+    return db.items.Where(i => i.Id == id)
+                   .Include(i => i.Orders)
+                   .Include(i => i.itemType)
+                   .ToList();
+});
+
+// Create Item
+app.MapPost("/item", (hhpwDbContext db, Item itemPayload) =>
+{
+    Item NewItem = new Item()
+    {
+        itemTypeId = itemPayload.itemTypeId,
+        itemName = itemPayload.itemName,
+        price = itemPayload.price,
+    };
+    db.items.Add(NewItem);
+    db.SaveChanges();
+    return Results.Created($"/api/item/{NewItem.Id}", NewItem);
+});
+
+// update item by id
+app.MapPut("/api/updateitem/{id}", (hhpwDbContext db, int id, Item itemPayload) =>
+{
+    Item itemToUpdate = db.items.SingleOrDefault(i => i.Id == id);
+    if (itemToUpdate == null)
+    {
+        return Results.NotFound();
+    }
+    itemToUpdate.itemName = itemPayload.itemName;
+    itemToUpdate.itemTypeId = itemPayload.itemTypeId;
+    itemToUpdate.price = itemPayload.price;
+    db.SaveChanges();
+    return Results.Ok(itemToUpdate);
+});
+
+// delete item by id
+app.MapDelete("/api/item/{id}", (hhpwDbContext db, int id) =>
+{
+    Item itemToDelete = db.items.SingleOrDefault(i => i.Id == id);
+    if (itemToDelete == null)
+    {
+        return Results.NotFound();
+    }
+    db.items.Remove(itemToDelete);
+    db.SaveChanges();
+    return Results.Ok(db.items);
+});
+
+// ITEM TYPE ENDPOINTS
+
+// create item type
+app.MapPost("/itemType", (hhpwDbContext db, ItemType itemTypePayload) =>
+{
+    ItemType NewItemType = new ItemType()
+    {
+        Name = itemTypePayload.Name,
+    };
+    db.itemTypes.Add(NewItemType);
+    db.SaveChanges();
+    return Results.Created($"/api/itemType/{NewItemType.Id}", NewItemType);
+});
+
+//view all item types
+app.MapGet("/itemTypes", (hhpwDbContext db) =>
+{
+    return db.itemTypes.ToList();
+});
+
+// View single item type by id
+app.MapGet("/itemTypes/{id}", (hhpwDbContext db, int id) =>
+{
+    return db.itemTypes.FirstOrDefault(i => i.Id == id);
+});
+
+// delete item type by id
+app.MapDelete("/api/itemTypes/{id}", (hhpwDbContext db, int id) =>
+{
+    ItemType itemTypeToDelete = db.itemTypes.SingleOrDefault(i => i.Id == id);
+    if (itemTypeToDelete == null)
+    {
+        return Results.NotFound();
+    }
+    db.itemTypes.Remove(itemTypeToDelete);
+    db.SaveChanges();
+    return Results.Ok(db.itemTypes);
+});
+
+// PAYMENT TYPE ENDPOINTS
+
+// create payment type
+app.MapPost("/paymentType", (hhpwDbContext db, PaymentType paymentTypePayload) =>
+{
+    PaymentType NewPaymentType = new PaymentType()
+    {
+        paymentTypeDesc = paymentTypePayload.paymentTypeDesc,
+    };
+    db.paymentTypes.Add(NewPaymentType);
+    db.SaveChanges();
+    return Results.Created($"/api/paymentType/{NewPaymentType.Id}", NewPaymentType);
+});
+
+//view all payment types
+app.MapGet("/paymentTypes", (hhpwDbContext db) =>
+{
+    return db.paymentTypes.ToList();
+});
+
+// View single payment type by id
+app.MapGet("/paymentTypes/{id}", (hhpwDbContext db, int id) =>
+{
+    return db.paymentTypes.FirstOrDefault(i => i.Id == id);
+});
+
+// delete payment type by id
+app.MapDelete("/api/paymentTypes/{id}", (hhpwDbContext db, int id) =>
+{
+    PaymentType paymentTypeToDelete = db.paymentTypes.SingleOrDefault(i => i.Id == id);
+    if (paymentTypeToDelete == null)
+    {
+        return Results.NotFound();
+    }
+    db.paymentTypes.Remove(paymentTypeToDelete);
+    db.SaveChanges();
+    return Results.Ok(db.paymentTypes);
+});
+
+// ORDER STATUS ENDPOINTS
+
+// create order status
+app.MapPost("/orderStatus", (hhpwDbContext db, OrderStatus orderStatusPayload) =>
+{
+    OrderStatus NewOrderStatus = new OrderStatus()
+    {
+        statusName = orderStatusPayload.statusName,
+    };
+    db.orderStatuses.Add(NewOrderStatus);
+    db.SaveChanges();
+    return Results.Created($"/api/orderStatus/{NewOrderStatus.Id}", NewOrderStatus);
+});
+
+//view all order statuses
+app.MapGet("/orderStatuses", (hhpwDbContext db) =>
+{
+    return db.orderStatuses.ToList();
+});
+
+// View single order status by id
+app.MapGet("/orderStatuses/{id}", (hhpwDbContext db, int id) =>
+{
+    return db.orderStatuses.FirstOrDefault(i => i.Id == id);
+});
+
+// delete order status by id
+app.MapDelete("/api/orderStatuses/{id}", (hhpwDbContext db, int id) =>
+{
+    OrderStatus statusToDelete = db.orderStatuses.SingleOrDefault(i => i.Id == id);
+    if (statusToDelete == null)
+    {
+        return Results.NotFound();
+    }
+    db.orderStatuses.Remove(statusToDelete);
+    db.SaveChanges();
+    return Results.Ok(db.orderStatuses);
+});
+
+// ORDER TYPE ENDPOINTS
+
+// create order type
+app.MapPost("/orderType", (hhpwDbContext db, OrderType orderTypePayload) =>
+{
+    OrderType NewOrderType = new OrderType()
+    {
+        orderTypeName = orderTypePayload.orderTypeName,
+    };
+    db.orderTypes.Add(NewOrderType);
+    db.SaveChanges();
+    return Results.Created($"/api/orderType/{NewOrderType.Id}", NewOrderType);
+});
+
+//view all order types
+app.MapGet("/orderTypes", (hhpwDbContext db) =>
+{
+    return db.orderTypes.ToList();
+});
+
+// View single order types by id
+app.MapGet("/orderTypes/{id}", (hhpwDbContext db, int id) =>
+{
+    return db.orderTypes.FirstOrDefault(i => i.Id == id);
+});
+
+// delete order types by id
+app.MapDelete("/api/orderTypes/{id}", (hhpwDbContext db, int id) =>
+{
+    OrderType orderTypeToDelete = db.orderTypes.SingleOrDefault(i => i.Id == id);
+    if (orderTypeToDelete == null)
+    {
+        return Results.NotFound();
+    }
+    db.orderTypes.Remove(orderTypeToDelete);
+    db.SaveChanges();
+    return Results.Ok(db.orderTypes);
+});
+
+
+
+
+
 
 
 
