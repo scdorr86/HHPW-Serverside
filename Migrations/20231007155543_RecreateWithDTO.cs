@@ -1,14 +1,32 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
 namespace HHPW_Serverside.Migrations
 {
-    public partial class InitialCreate : Migration
+    public partial class RecreateWithDTO : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "CreateOrderPayload",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    orderStatusId = table.Column<int>(type: "integer", nullable: false),
+                    orderTypeId = table.Column<int>(type: "integer", nullable: false),
+                    paymentTypeId = table.Column<int>(type: "integer", nullable: false),
+                    userId = table.Column<int>(type: "integer", nullable: false),
+                    itemIds = table.Column<List<int>>(type: "integer[]", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CreateOrderPayload", x => x.id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "itemTypes",
                 columns: table => new
@@ -106,7 +124,7 @@ namespace HHPW_Serverside.Migrations
                     orderStatusId = table.Column<int>(type: "integer", nullable: false),
                     orderTypeId = table.Column<int>(type: "integer", nullable: false),
                     paymentTypeId = table.Column<int>(type: "integer", nullable: false),
-                    uid = table.Column<string>(type: "text", nullable: false)
+                    userId = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -127,6 +145,12 @@ namespace HHPW_Serverside.Migrations
                         name: "FK_orders_paymentTypes_paymentTypeId",
                         column: x => x.paymentTypeId,
                         principalTable: "paymentTypes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_orders_users_userId",
+                        column: x => x.userId,
+                        principalTable: "users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -201,6 +225,11 @@ namespace HHPW_Serverside.Migrations
                 column: "paymentTypeId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_orders_userId",
+                table: "orders",
+                column: "userId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_reviews_orderId",
                 table: "reviews",
                 column: "orderId");
@@ -209,13 +238,13 @@ namespace HHPW_Serverside.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "CreateOrderPayload");
+
+            migrationBuilder.DropTable(
                 name: "ItemOrder");
 
             migrationBuilder.DropTable(
                 name: "reviews");
-
-            migrationBuilder.DropTable(
-                name: "users");
 
             migrationBuilder.DropTable(
                 name: "items");
@@ -234,6 +263,9 @@ namespace HHPW_Serverside.Migrations
 
             migrationBuilder.DropTable(
                 name: "paymentTypes");
+
+            migrationBuilder.DropTable(
+                name: "users");
         }
     }
 }

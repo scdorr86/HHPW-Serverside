@@ -1,4 +1,5 @@
 using HHPW_Serverside.Models;
+using HHPW_Serverside.DTOs;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.Json;
@@ -49,10 +50,25 @@ if (app.Environment.IsDevelopment())
 
 // USER ENDPOINTS
 
+// check for authenticated/registered user
+app.MapGet("/checkuser/{uid}", (hhpwDbContext db, string uid) =>
+{
+    var authUser = db.users.Where(u => u.uid == uid).ToList();
+    if (uid == null)
+    {
+        return Results.NotFound();
+    }
+    else
+    {
+        return Results.Ok(authUser);
+    }
+});
+
 //get all users
 app.MapGet("/users", (hhpwDbContext db) =>
 {
     return db.users.Include(x => x.orders)
+                   .ThenInclude(o => o.items)
                    .ToList();
 });
 
@@ -61,6 +77,7 @@ app.MapGet("/userByUid/{uid}", (hhpwDbContext db, string uid) =>
 {
     return db.users.Where(u => u.uid == uid)
                    .Include(x => x.orders)
+                   .ThenInclude(o => o.items)
                    .ToList();
 });
 
@@ -69,6 +86,7 @@ app.MapGet("/users/{id}", (hhpwDbContext db, int id) =>
 {
     return db.users.Where(u => u.Id == id)
                    .Include(x => x.orders)
+                   .ThenInclude(o => o.items)
                    .ToList();
 });
 
@@ -345,19 +363,35 @@ app.MapDelete("/api/orderTypes/{id}", (hhpwDbContext db, int id) =>
 // ORDER ENDPOINTS
 
 // create an order
-app.MapPost("/orders", (hhpwDbContext db, Order orderPayload, int itemId) =>
+app.MapPost("/orders", (hhpwDbContext db, CreateOrderPayload orderPayload) =>
 {
-    var itemToAdd = db.items.SingleOrDefault(i => i.Id == itemId);
+    if (orderPayload == null || orderPayload.itemIds == null || !orderPayload.itemIds.Any())
+    {
+        return Results.BadRequest("Invalid request. You must provide at least one item ID.");
+    }
 
     Order NewOrder = new Order()
     {
         orderStatusId = orderPayload.orderStatusId,
         orderTypeId = orderPayload.orderTypeId,
         paymentTypeId = orderPayload.paymentTypeId,
-        uid = orderPayload.uid,
+        userId = orderPayload.userId,
+        items = new List<Item>()
     };
 
-    NewOrder.items.Add(itemToAdd);
+    // Find and add items to the order based on item IDs
+    foreach (var itemId in orderPayload.itemIds)
+    {
+        var itemToAdd = db.items.SingleOrDefault(i => i.Id == itemId);
+        if (itemToAdd != null)
+        {
+            NewOrder.items.Add(itemToAdd);
+        }
+        else
+        {
+            return Results.NotFound($"Item with ID {itemId} not found.");
+        }
+    }
 
     db.orders.Add(NewOrder);
     db.SaveChanges();
@@ -365,10 +399,9 @@ app.MapPost("/orders", (hhpwDbContext db, Order orderPayload, int itemId) =>
 });
 
 //view all orders
-app.MapGet("/orders", (hhpwDbContext db, int id) =>
+app.MapGet("/orders", (hhpwDbContext db) =>
 {
-    return db.orders.Where(o => o.Id == id)
-                    .Include(o => o.status)
+    return db.orders.Include(o => o.status)
                     .Include(o => o.orderType)
                     .Include(o => o.paymentType)
                     .Include(o => o.user)
@@ -387,9 +420,8 @@ app.MapGet("/orders/{id}", (hhpwDbContext db, int id) =>
                     .Include(o => o.user)
                     .Include(o => o.reviews)
                     .Include(o => o.items)
-                    .ThenInclude(i => i.itemType)
+                    .ThenInclude(i => i.itemType);
 });
-
 
 // delete order by id
 app.MapDelete("/api/orders/{id}", (hhpwDbContext db, int id) =>
