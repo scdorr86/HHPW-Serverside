@@ -342,10 +342,113 @@ app.MapDelete("/api/orderTypes/{id}", (hhpwDbContext db, int id) =>
     return Results.Ok(db.orderTypes);
 });
 
+// ORDER ENDPOINTS
+
+// create an order
+app.MapPost("/orders", (hhpwDbContext db, Order orderPayload, int itemId) =>
+{
+    var itemToAdd = db.items.SingleOrDefault(i => i.Id == itemId);
+
+    Order NewOrder = new Order()
+    {
+        orderStatusId = orderPayload.orderStatusId,
+        orderTypeId = orderPayload.orderTypeId,
+        paymentTypeId = orderPayload.paymentTypeId,
+        uid = orderPayload.uid,
+    };
+
+    NewOrder.items.Add(itemToAdd);
+
+    db.orders.Add(NewOrder);
+    db.SaveChanges();
+    return Results.Created($"/api/orders/{NewOrder.Id}", NewOrder);
+});
+
+//view all orders
+app.MapGet("/orders", (hhpwDbContext db, int id) =>
+{
+    return db.orders.Where(o => o.Id == id)
+                    .Include(o => o.status)
+                    .Include(o => o.orderType)
+                    .Include(o => o.paymentType)
+                    .Include(o => o.user)
+                    .Include(o => o.reviews)
+                    .Include(o => o.items)
+                    .ThenInclude(i => i.itemType)
+                    .ToList();
+});
+
+// View single order by id
+app.MapGet("/orders/{id}", (hhpwDbContext db, int id) =>
+{
+    return db.orders.Include(o => o.status)
+                    .Include(o => o.orderType)
+                    .Include(o => o.paymentType)
+                    .Include(o => o.user)
+                    .Include(o => o.reviews)
+                    .Include(o => o.items)
+                    .ThenInclude(i => i.itemType)
+});
 
 
+// delete order by id
+app.MapDelete("/api/orders/{id}", (hhpwDbContext db, int id) =>
+{
+    Order orderToDelete = db.orders.SingleOrDefault(i => i.Id == id);
+    if (orderToDelete == null)
+    {
+        return Results.NotFound();
+    }
+    db.orders.Remove(orderToDelete);
+    db.SaveChanges();
+    return Results.Ok(db.orders);
+});
 
+// add item to order
+app.MapPost("api/posts/{postId}/tags/{tagId}", (hhpwDbContext db, int orderId, int itemId) =>
+{
+    var order = db.orders.Include(o => o.items)
+                         .FirstOrDefault(o => o.Id == orderId);
+    if (order == null)
+    {
+        return Results.NotFound("Post not found");
+    }
 
+    var itemToAdd = db.items.Find(itemId);
+
+    if (itemToAdd == null)
+    {
+        return Results.NotFound("Tag not found");
+    }
+
+    order.items.Add(itemToAdd);
+    db.SaveChanges();
+    return Results.Ok(order);
+});
+
+// remove item from order
+app.MapDelete("api/orders/{orderId}/items/{itemId}", (hhpwDbContext db, int orderId, int itemId) =>
+{
+    var order = db.orders
+       .Include(o => o.items)
+       .FirstOrDefault(o => o.Id == orderId);
+
+    if (order == null)
+    {
+        return Results.NotFound("Post not found");
+    }
+
+    var itemToRemove = db.items.Find(itemId);
+
+    if (itemToRemove == null)
+    {
+        return Results.NotFound("Tag not found");
+    }
+
+    order.items.Remove(itemToRemove);
+    db.SaveChanges();
+    return Results.Ok(order);
+});
 
 
 
