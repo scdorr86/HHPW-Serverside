@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using HHPW_Serverside.Models;
+using HHPW_Serverside.DTOs;
 
 public class hhpwDbContext : DbContext
 {
@@ -11,6 +12,7 @@ public class hhpwDbContext : DbContext
     public DbSet<ItemType> itemTypes { get; set; }
     public DbSet<OrderType> orderTypes { get; set; }
     public DbSet<OrderStatus> orderStatuses { get; set; }
+    public DbSet<CreateOrderPayload> CreateOrderPayload { get; set; }
 
     public hhpwDbContext(DbContextOptions<hhpwDbContext> context) : base(context)
     {
