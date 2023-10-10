@@ -412,9 +412,10 @@ app.MapGet("/orders", (hhpwDbContext db) =>
 });
 
 // View single order by id
-app.MapGet("/orders/{id}", (hhpwDbContext db, int id) =>
-{
-    return db.orders.Include(o => o.status)
+app.MapGet("/order/{id}", (hhpwDbContext db, int id) =>
+{    
+    return db.orders.Where(o => o.Id == id)
+                    .Include(o => o.status)
                     .Include(o => o.orderType)
                     .Include(o => o.paymentType)
                     .Include(o => o.user)
@@ -424,7 +425,7 @@ app.MapGet("/orders/{id}", (hhpwDbContext db, int id) =>
 });
 
 // delete order by id
-app.MapDelete("/api/orders/{id}", (hhpwDbContext db, int id) =>
+app.MapDelete("/api/order/{id}", (hhpwDbContext db, int id) =>
 {
     Order orderToDelete = db.orders.SingleOrDefault(i => i.Id == id);
     if (orderToDelete == null)
@@ -437,23 +438,23 @@ app.MapDelete("/api/orders/{id}", (hhpwDbContext db, int id) =>
 });
 
 // add item to order
-app.MapPost("api/posts/{postId}/tags/{tagId}", (hhpwDbContext db, int orderId, int itemId) =>
+app.MapPost("api/order/{orderId}/items/{itemId}", (hhpwDbContext db, int orderId, int itemId) =>
 {
     var order = db.orders.Include(o => o.items)
                          .FirstOrDefault(o => o.Id == orderId);
     if (order == null)
     {
-        return Results.NotFound("Post not found");
+        return Results.NotFound("Order not found");
     }
 
-    var itemToAdd = db.items.Find(itemId);
+    var itemToAdd = db.items?.Find(itemId);
 
     if (itemToAdd == null)
     {
-        return Results.NotFound("Tag not found");
+        return Results.NotFound("Item not found");
     }
 
-    order.items.Add(itemToAdd);
+    order?.items?.Add(itemToAdd);
     db.SaveChanges();
     return Results.Ok(order);
 });
@@ -467,14 +468,14 @@ app.MapDelete("api/orders/{orderId}/items/{itemId}", (hhpwDbContext db, int orde
 
     if (order == null)
     {
-        return Results.NotFound("Post not found");
+        return Results.NotFound("Order not found");
     }
 
     var itemToRemove = db.items.Find(itemId);
 
     if (itemToRemove == null)
     {
-        return Results.NotFound("Tag not found");
+        return Results.NotFound("Item not found");
     }
 
     order.items.Remove(itemToRemove);
