@@ -19,6 +19,15 @@ public class hhpwDbContext : DbContext
 
     }
 
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity("ItemOrder").Property<int>("ItemOrderId").HasColumnType("int").ValueGeneratedOnAdd();
+        modelBuilder.Entity("ItemOrder").HasKey("ItemOrderId");
+        // modelBuilder.Entity("ItemOrder").HasOne("OrdersId").WithMany();
+        // modelBuilder.Entity("ItemOrder").HasOne("itemsId").WithMany();
+
+    }
+
     //protected override void OnModelCreating(ModelBuilder modelBuilder)
     //{
     //    modelBuilder.Entity<PaymentType>().HasData(new PaymentType[]

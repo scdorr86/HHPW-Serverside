@@ -53,7 +53,7 @@ if (app.Environment.IsDevelopment())
 // check for authenticated/registered user
 app.MapGet("/checkuser/{uid}", (hhpwDbContext db, string uid) =>
 {
-    var authUser = db.users.Where(u => u.uid == uid).ToList();
+    var authUser = db.users?.Where(u => u.uid == uid).ToList();
     if (uid == null)
     {
         return Results.NotFound();
@@ -448,6 +448,7 @@ app.MapPost("api/order/{orderId}/items/{itemId}", (hhpwDbContext db, int orderId
     }
 
     var itemToAdd = db.items?.Find(itemId);
+
 
     if (itemToAdd == null)
     {
