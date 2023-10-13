@@ -365,10 +365,10 @@ app.MapDelete("/api/orderTypes/{id}", (hhpwDbContext db, int id) =>
 // create an order
 app.MapPost("/orders", (hhpwDbContext db, CreateOrderPayload orderPayload) =>
 {
-    if (orderPayload == null || orderPayload.itemIds == null || !orderPayload.itemIds.Any())
-    {
-        return Results.BadRequest("Invalid request. You must provide at least one item ID.");
-    }
+    //if (orderPayload == null || orderPayload.itemIds == null || !orderPayload.itemIds.Any())
+    //{
+    //    return Results.BadRequest("Invalid request. You must provide at least one item ID.");
+    //}
 
     Order NewOrder = new Order()
     {
@@ -427,11 +427,15 @@ app.MapGet("/order/{id}", (hhpwDbContext db, int id) =>
 // delete order by id
 app.MapDelete("/api/order/{id}", (hhpwDbContext db, int id) =>
 {
-    Order orderToDelete = db.orders.SingleOrDefault(i => i.Id == id);
+    Order orderToDelete = db.orders.Include(o => o.items)
+                                   .SingleOrDefault(o => o.Id == id); 
     if (orderToDelete == null)
     {
         return Results.NotFound();
     }
+
+    decimal orderTotal = orderToDelete.items?.Sum(i => i.price) ?? 0;
+
     db.orders.Remove(orderToDelete);
     db.SaveChanges();
     return Results.Ok(db.orders);
@@ -482,6 +486,24 @@ app.MapDelete("api/orders/{orderId}/items/{itemId}", (hhpwDbContext db, int orde
     order.items.Remove(itemToRemove);
     db.SaveChanges();
     return Results.Ok(order);
+});
+
+// update order status by id
+app.MapPut("/order/{id}", (hhpwDbContext db, int id, Order orderPayload) =>
+{
+    Order orderToUpdate = db.orders.SingleOrDefault(i => i.Id == id);
+    if (orderToUpdate == null)
+    {
+        return Results.NotFound();
+    }
+
+    orderToUpdate.orderStatusId = orderPayload.orderStatusId;
+    orderToUpdate.orderTypeId = orderPayload.orderTypeId;
+    orderToUpdate.paymentTypeId = orderPayload.paymentTypeId;
+
+    db.orders.Add(orderToUpdate);
+    db.SaveChanges();
+    return Results.Ok(orderToUpdate);
 });
 
 
