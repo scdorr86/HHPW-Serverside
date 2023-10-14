@@ -501,7 +501,7 @@ app.MapPut("/order/{id}", (hhpwDbContext db, int id, Order orderPayload) =>
     orderToUpdate.orderTypeId = orderPayload.orderTypeId;
     orderToUpdate.paymentTypeId = orderPayload.paymentTypeId;
 
-    db.orders.Add(orderToUpdate);
+  
     db.SaveChanges();
     return Results.Ok(orderToUpdate);
 });
