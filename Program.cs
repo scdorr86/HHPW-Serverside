@@ -78,7 +78,7 @@ app.MapGet("/userByUid/{uid}", (hhpwDbContext db, string uid) =>
     return db.users.Where(u => u.uid == uid)
                    .Include(x => x.orders)
                    .ThenInclude(o => o.items)
-                   .ToList();
+                   .FirstOrDefault();
 });
 
 //get single user by db id
