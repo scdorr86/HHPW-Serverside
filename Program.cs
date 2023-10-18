@@ -506,6 +506,20 @@ app.MapPut("/order/{id}", (hhpwDbContext db, int id, Order orderPayload) =>
     return Results.Ok(orderToUpdate);
 });
 
+//REVIEW ENDPOINTS
+
+// create review
+app.MapPost("/review", (hhpwDbContext db, Review reviewPayload) =>
+{
+    Review NewReview = new Review()
+    {
+         content = reviewPayload.content,
+    };
+    db.reviews.Add(NewReview);
+    db.SaveChanges();
+    return Results.Created($"/review/{NewReview.Id}", NewReview);
+});
+
 
 
 app.Run();
