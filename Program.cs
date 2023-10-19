@@ -520,6 +520,28 @@ app.MapPost("/review", (hhpwDbContext db, Review reviewPayload) =>
     return Results.Created($"/review/{NewReview.Id}", NewReview);
 });
 
+// add review to order
+app.MapPost("/order/{orderId}/review", (hhpwDbContext db, int orderId, Review reviewPayload) =>
+{
+    var order = db.orders.Include(o => o.reviews)
+                         .FirstOrDefault(o => o.Id == orderId);
+    if (order == null)
+    {
+        return Results.NotFound("Order not found");
+    }
+
+    Review NewReview = new Review()
+    {
+        content = reviewPayload.content,
+        orderId = orderId,
+    };
+    db.reviews.Add(NewReview);
+
+    order?.reviews?.Add(NewReview);
+    db.SaveChanges();
+    return Results.Ok(order);
+});
+
 
 
 app.Run();
