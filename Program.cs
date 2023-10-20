@@ -537,9 +537,22 @@ app.MapPost("/order/{orderId}/review", (hhpwDbContext db, int orderId, Review re
     };
     db.reviews.Add(NewReview);
 
-    order?.reviews?.Add(NewReview);
     db.SaveChanges();
     return Results.Ok(order);
+});
+
+// delete review by id
+app.MapDelete("/review/{id}", (hhpwDbContext db, int id) =>
+{
+    Review reviewToDelete = db.reviews.SingleOrDefault(r => r.Id == id);
+    if (reviewToDelete == null)
+    {
+        return Results.NotFound();
+    }
+
+    db.reviews.Remove(reviewToDelete);
+    db.SaveChanges();
+    return Results.Ok(db.reviews);
 });
 
 
